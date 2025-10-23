@@ -10,7 +10,7 @@ CREATE TABLE users (
     password TEXT NOT NULL           -- Contraseña hasheada (TEXT es el tipo de cadena recomendado para SQLite)
 );
 
-CREATE TABLE professor(
+CREATE TABLE teacher(
     id INTEGER PRIMARY KEY, 
-    CONSTRAINT fk_professor_user FOREIGN KEY (id) REFERENCES users(id)
+    CONSTRAINT teacher_user FOREIGN KEY (id) REFERENCES users(id)
 );
