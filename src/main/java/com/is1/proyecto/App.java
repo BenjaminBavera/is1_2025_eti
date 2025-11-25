@@ -346,45 +346,56 @@ public class App {
                 res.redirect("/registrarProfesor?error=Correo invalido.");
                 return "";
             }
-            // Verificar si la persona ya existe
-                Persona personaExistente = Persona.findFirst("dni = ?", dni);
-                if (personaExistente != null) {
-                    res.redirect("/registrarProfesor?error=El DNI ya esta registrado.");
-                    return "";
-                }
-                // Verificar si el correo del profesor ya existe
-                Profesor profesorExistente = Profesor.findFirst("correo = ?", correo);
-                if (profesorExistente != null) {
-                    res.redirect("/registrarProfesor?error=El correo ya esta registrado.");
-                    return "";
-                }
+
+            // Verificar si ya es profesor
+            // Si encontramos un Profesor con este DNI, ahí sí detenemos.
+            Profesor profesorExistente = Profesor.findFirst("dni = ?", dni);
+            if (profesorExistente != null) {
+                res.redirect("/registrarProfesor?error=El DNI ya esta registrado como PROFESOR.");
+                return "";
+            }
+
+            // Verificar si el correo del profesor ya existe
+            Profesor correoProfesorExistente = Profesor.findFirst("correo = ?", correo);
+            if (correoProfesorExistente != null) {
+                res.redirect("/registrarProfesor?error=El correo ya esta registrado.");
+                return "";
+            }
+            
+            //Verificar/Crear Persona
+            // Buscamos si la persona ya existe (ej. un Estudiante)
+            Persona persona = Persona.findFirst("dni = ?", dni);
 
             try {
-                // Intenta crear y guardar el nuevo profesor en la base de datos.
-                Persona per = new Persona();
-                Profesor pro = new Profesor(); // Crea una nueva instancia del modelo Profesor.
+                if (persona == null) {
+                    // Si la persona NO existe, la creamos desde cero
+                    persona = new Persona();
+                    persona.set("nombre", nombre);
+                    persona.set("apellido", apellido);
+                    persona.set("dni", dni);
+                    persona.saveIt(); // Guarda la nueva persona en la tabla 'persona'.
+                } else {
+                    // Si la persona SÍ existe (es Estudiante), actualizamos sus datos o simplemente seguimos.
+                    persona.set("nombre", nombre);
+                    persona.set("apellido", apellido);
+                    persona.saveIt(); 
+                }
 
-                per.set("nombre", nombre); // Asigna el nombre de persona.
-                per.set("apellido", apellido); // Asigna el apellido de persona.
-                per.set("dni", dni); // Asigna el dni de persona.
-                per.saveIt(); // Guarda la nueva persona en la tabla 'persona'.
-
-                pro.set("dni", dni); //Asigna la fk dni de profesor.
+                //Crear el Profesor (Vinculado a la Persona por DNI)
+                Profesor pro = new Profesor(); 
+                pro.set("dni", dni); // FK dni de profesor.
                 pro.set("correo", correo); // Asigna el correo de profesor. 
                 pro.saveIt(); // Guarda el nuevo profesor en la tabla 'profesor'.
 
-                res.status(201); // Código de estado HTTP 201 (Created) para una creación exitosa.
-                // Redirige al formulario de creación con un mensaje de éxito.
+                res.status(201); // Código de estado HTTP 201 (Created).
                 res.redirect("/registrarProfesor?message=Profesor "+ nombre + " "+ apellido + " registrado exitosamente!");
-                return ""; // Retorna una cadena vacía.
+                return ""; 
 
             } catch (Exception e) {
-                // Si ocurre cualquier error durante la operación de DB (ej. nombre de usuario duplicado),
-                // se captura aquí y se redirige con un mensaje de error.
                 System.err.println("Error al registrar el profesor: " + e.getMessage());
-                e.printStackTrace(); // Imprime el stack trace para depuración.
+                e.printStackTrace(); 
                 res.redirect("/registrarProfesor?error=Error interno al registrar profesor. Intente de nuevo.");
-                return ""; // Retorna una cadena vacía.
+                return ""; 
             }
         });
         // POST: Endpoint para añadir profesores (API que devuelve JSON, no HTML).
